@@ -3,10 +3,13 @@ exports.send405Error = (req, res, next) => {
 };
 
 exports.handleCustError = (err, req, res, next) => {
+  if (err.msg === "Incorrect value") {
+    res.status(400).send(err.msg);
+  }
   if (err.msg) {
-    res.status(404).send(createCustMsgErr);
+    res.status(404).send(createCustMsgErr());
   } else if (err.code === "22003") {
-    res.status(404).send(createCustMsgErr);
+    res.status(404).send(createCustMsgErr());
   } else {
     next(err);
   }

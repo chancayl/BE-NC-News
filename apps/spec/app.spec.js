@@ -128,11 +128,95 @@ describe("/api", () => {
           });
       });
     });
+    describe("GET array of articles", () => {
+      it("200 status, returns all articles from the author and topic requested with the correct keys", () => {
+        return request(app)
+          .get("/api/articles?author=butter_bridge&topic=mitch")
+          .expect(200)
+          .then(response => {
+            expect(response.body[0]).to.contain.keys(
+              "author",
+              "title",
+              "article_id",
+              "topic",
+              "created_at",
+              "votes",
+              "comment_count"
+            );
+          });
+      });
+      it("200 status and returns an array of articles sorted by date in descending order by default", () => {
+        return request(app)
+          .get("/api/articles?author=butter_bridge&topic=mitch")
+          .expect(200)
+          .then(response => {
+            expect(response.body).to.be.sortedBy("created_at", {
+              descending: true
+            });
+          });
+      });
+      it("200 status and returns an array of sorted articles as per client request", () => {
+        return request(app)
+          .get(
+            "/api/articles?author=butter_bridge&topic=mitch&sort_by=votes&sort_order=asc"
+          )
+          .expect(200)
+          .then(response => {
+            expect(response.body).to.be.sortedBy("votes", { ascending: true });
+          });
+      });
+      it("200 when passing a non valid username but a valid topic, will respond with an array of all articles for the requested topic", () => {
+        return request(app)
+          .get("/api/articles?author=butterbri&topic=mitch")
+          .expect(200)
+          .then(response => {
+            expect(response.body).to.be.an("array");
+            expect(response.body[0]).to.contain.keys(
+              "author",
+              "title",
+              "article_id",
+              "topic",
+              "created_at",
+              "votes",
+              "comment_count"
+            );
+          });
+      });
+    });
+  });
+
+  describe("/Comments", () => {
+    describe("PATCH", () => {
+      it("PATCH 200, updates the comment_vote and returns the updated comment", () => {
+        return request(app)
+          .patch("/api/comments/10")
+          .send({ inc_votes: 2 })
+          .expect(200)
+          .then(({ body }) => {
+            expect(body).to.contain.keys(
+              "comment_id",
+              "author",
+              "article_id",
+              "votes",
+              "created_at",
+              "body"
+            );
+            expect(body.votes).to.equal(2);
+          });
+      });
+    });
+    describe("DELETE", () => {
+      it("204, deletes a treasure from the database given a treasure id", () => {
+        return request(app)
+          .delete("/api/comments/10")
+          .expect(204);
+      });
+    });
   });
 
   describe("ERROR", () => {
-    it("status:405", () => {
-      const invalidMethods = ["patch", "put", "delete"];
+    it("Topics status:405", () => {
+      const invalidMethods = ["patch", "post", "put", "delete"];
       const methodPromises = invalidMethods.map(method => {
         return request(app)
           [method]("/api/Topics")
@@ -143,23 +227,48 @@ describe("/api", () => {
       });
       return Promise.all(methodPromises);
     });
-    it("404 status when the requested username does not exist", () => {
+
+    it("Users status:405", () => {
+      const invalidMethods = ["patch", "post", "put", "delete"];
+      const methodPromises = invalidMethods.map(method => {
+        return request(app)
+          [method]("/api/users/butterbridge")
+          .expect(405)
+          .then(({ body: { msg } }) => {
+            expect(msg).to.equal("method not allowed");
+          });
+      });
+      return Promise.all(methodPromises);
+    });
+    it("GET user 404 status when the requested username does not exist", () => {
       return request(app)
         .get("/api/users/butterbridge")
         .expect(404)
         .then(response => {
-          expect(response.status).to.equal(404);
+          expect(response.text).to.equal("Request not found");
         });
     });
-    it("404 status when the requested id does not exist", () => {
+    it("Articles by id status:405", () => {
+      const invalidMethods = ["post", "put", "delete"];
+      const methodPromises = invalidMethods.map(method => {
+        return request(app)
+          [method]("/api/users/butterbridge")
+          .expect(405)
+          .then(({ body: { msg } }) => {
+            expect(msg).to.equal("method not allowed");
+          });
+      });
+      return Promise.all(methodPromises);
+    });
+    it("GET article by article_id 404 status when the requested id does not exist", () => {
       return request(app)
         .get("/api/articles/11111110000")
         .expect(404)
         .then(response => {
-          expect(response.status).to.equal(404);
+          expect(response.text).to.equal("Request not found");
         });
     });
-    it("400 status when the param requested is not valid", () => {
+    it("GET article by article_id 400 status when the param requested is not valid", () => {
       return request(app)
         .get("/api/articles/hi")
         .expect(400)
@@ -169,7 +278,37 @@ describe("/api", () => {
           );
         });
     });
-    it("400 status when trying to post an incorrect body", () => {
+    it("PATCH articles 400 status when trying to modify an incorrect value", () => {
+      return request(app)
+        .patch("/api/articles/10")
+        .send({ inc_votes: true })
+        .expect(400)
+        .then(response => {
+          expect(response.text).to.equal("Incorrect value");
+        });
+    });
+    it("PATCH articles 400 status when trying to modify an incorrect body", () => {
+      return request(app)
+        .patch("/api/comments/1")
+        .send({ 454: 1 })
+        .expect(400)
+        .then(response => {
+          expect(response.text).to.equal("Incorrect value");
+        });
+    });
+    it("Comments by articles_id status:405", () => {
+      const invalidMethods = ["put", "patch", "delete"];
+      const methodPromises = invalidMethods.map(method => {
+        return request(app)
+          [method]("/api/articles/10/comments")
+          .expect(405)
+          .then(({ body: { msg } }) => {
+            expect(msg).to.equal("method not allowed");
+          });
+      });
+      return Promise.all(methodPromises);
+    });
+    it("POST a comment by article_id 400 status when trying to post an incorrect body", () => {
       return request(app)
         .post("/api/articles/10/comments")
         .send({ username: "luisa" })
@@ -180,7 +319,7 @@ describe("/api", () => {
           );
         });
     });
-    it("400 status when posting a value of incorrect type", () => {
+    it("POST a comment by article_id 400 status when posting a value of incorrect type", () => {
       return request(app)
         .post("/api/articles/10/comments")
         .send({ username: "luisa", body: 3 })
@@ -191,7 +330,8 @@ describe("/api", () => {
           );
         });
     });
-    it("400 status when sortBy and invalid column", () => {
+    
+    it("GET comments by article_id 400 status when sortBy and invalid column", () => {
       return request(app)
         .get("/api/articles/1/comments?sort_by=invalid")
         .expect(400)
@@ -201,12 +341,89 @@ describe("/api", () => {
           );
         });
     });
-    it("400 status when sortBy and invalid column", () => {
+    it("GET comments by article_id 400 status when sortBy and invalid column", () => {
       return request(app)
         .get("/api/articles/1/comments?sort_by=3")
         .expect(400)
         .then(response => {
           expect(response.error.text).to.eql(' column "3" does not exist');
+        });
+    });
+    it("Articles by articles_id with queries status:405", () => {
+        const invalidMethods = ["put", "patch", "post", "delete"];
+        const methodPromises = invalidMethods.map(method => {
+          return request(app)
+            [method]("/api/articles?username=rogersop&topic=mitch")
+            .expect(405)
+            .then(({ body: { msg } }) => {
+              expect(msg).to.equal("method not allowed");
+            });
+        });
+        return Promise.all(methodPromises);
+      });
+    it("GET articles 404 when passing a non valid query", () => {
+      return request(app)
+        .get("/api/articles?username=rogersop&topic=5555")
+        .expect(404)
+        .then(response => {
+          expect(response.text).to.eql("Request not found");
+        });
+    });
+    it("GET articles 400 status when sortBy and invalid column", () => {
+      return request(app)
+        .get(
+          "/api/articles?author=butter_bridge&topic=mitch&sort_by=5555&sort_order=asc"
+        )
+        .expect(400)
+        .then(response => {
+          expect(response.error.text).to.eql(' column "5555" does not exist');
+        });
+    });
+    it("Articles by articles_id with queries status:405", () => {
+        const invalidMethods = ["put", "post"];
+        const methodPromises = invalidMethods.map(method => {
+          return request(app)
+            [method]("/api/comments/1")
+            .expect(405)
+            .then(({ body: { msg } }) => {
+              expect(msg).to.equal("method not allowed");
+            });
+        });
+        return Promise.all(methodPromises);
+      });
+    it("PATCH comment 400 status when trying to modify an incorrect value", () => {
+      return request(app)
+        .patch("/api/comments/1")
+        .send({ inc_votes: true })
+        .expect(400)
+        .then(response => {
+          expect(response.text).to.equal("Incorrect value");
+        });
+    });
+    it("PATCH comment 400 status when trying to modify an incorrect body", () => {
+      return request(app)
+        .patch("/api/comments/1")
+        .send({ 454: 1 })
+        .expect(400)
+        .then(response => {
+          expect(response.text).to.equal("Incorrect value");
+        });
+    });
+    it("PATCH comment 404 status when trying to modify a non existing comment", () => {
+      return request(app)
+        .patch("/api/comments/500000")
+        .send({ inc_votes: 2 })
+        .expect(404)
+        .then(response => {
+          expect(response.text).to.equal("Request not found");
+        });
+    });
+    it("DELETE comment 404 status when the comment id provided does not exist", () => {
+      return request(app)
+        .delete("/api/comments/1545450")
+        .expect(404)
+        .then(response => {
+          expect(response.text).to.equal("Request not found");
         });
     });
   });

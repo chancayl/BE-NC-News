@@ -2,7 +2,8 @@ const {
   fetchArticles,
   modifyArticle,
   addComment,
-  commentsByArticleId
+  commentsByArticleId,
+  arrayofArticles
 } = require("../models/articles-model");
 
 exports.getArticle = (req, res, next) => {
@@ -38,6 +39,15 @@ exports.getComments = (req, res, next) => {
   const id = req.params.article_id;
   const { sort_by, sort_order } = req.query;
   commentsByArticleId(id, sort_by, sort_order)
+    .then(response => {
+      res.status(200).send(response);
+    })
+    .catch(next);
+};
+
+exports.getArrayofArticles = (req, res, next) => {
+  const { username, topic, sort_by, sort_order } = req.query;
+  arrayofArticles(username, topic, sort_by, sort_order)
     .then(response => {
       res.status(200).send(response);
     })

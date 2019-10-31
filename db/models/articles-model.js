@@ -11,22 +11,29 @@ exports.fetchArticles = id => {
 };
 
 exports.modifyArticle = (id, newVote) => {
-  return connection
-    .select("Articles.*")
-    .from("Articles")
-    .where("Articles.article_id", "=", id)
-    .increment("votes", newVote)
-    .returning("*")
-    .then(response => {
-      if (response.length >= 1) {
-        return response;
-      } else {
-        return Promise.reject({
-          status: 404,
-          msg: `Request not found`
-        });
-      }
+  if (typeof newVote !== "number") {
+    return Promise.reject({
+      status: 400,
+      msg: `Incorrect value`
     });
+  } else {
+    return connection
+      .select("Articles.*")
+      .from("Articles")
+      .where("Articles.article_id", "=", id)
+      .increment("votes", newVote)
+      .returning("*")
+      .then(response => {
+        if (response.length >= 1) {
+          return response;
+        } else {
+          return Promise.reject({
+            status: 404,
+            msg: `Request not found`
+          });
+        }
+      });
+  }
 };
 
 exports.addComment = (id, newComment) => {
@@ -50,4 +57,41 @@ exports.commentsByArticleId = (
     .where("Comments.article_id", "=", id)
     .returning("*")
     .orderBy(sort_by, sort_order);
+};
+
+exports.arrayofArticles = (
+  username,
+  topic,
+  sort_by = "Articles.created_at",
+  sort_order = "desc"
+) => {
+  return connection
+    .select(
+      "Articles.article_id",
+      "title",
+      "Articles.votes",
+      "Articles.topic",
+      "Articles.author",
+      "Articles.created_at"
+    )
+    .from("Articles")
+    .leftJoin("Comments", "Articles.article_id", "Comments.article_id")
+    .groupBy("Articles.article_id")
+    .count({ comment_count: "Comments.comment_id" })
+    .orderBy(sort_by, sort_order)
+    .modify(query => {
+      if (username) query.where("Articles.author", "=", username);
+      if (topic) query.where("Articles.topic", "=", topic);
+    })
+    .returning("*")
+    .then(response => {
+      if (response.length >= 1) {
+        return response;
+      } else {
+        return Promise.reject({
+          status: 404,
+          msg: `Request not found`
+        });
+      }
+    });
 };
