@@ -84,9 +84,9 @@ exports.arrayofArticles = (
       if (topic) query.where("Articles.topic", "=", topic);
     })
     .returning("*")
-    .then(response => {
-      if (response.length >= 1) {
-        return response;
+    .then(article => {
+      if (article.length >= 1) {
+        return article;
       } else {
         return Promise.reject({
           status: 404,

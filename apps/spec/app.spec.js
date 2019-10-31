@@ -26,6 +26,15 @@ describe("/api", () => {
             expect(response.body[0]).to.contain.keys("slug", "description");
           });
       });
+      it("GET 200 and returns the requested slug", () => {
+        return request(app)
+          .get("/api/Topics?slug=paper")
+          .expect(200)
+          .then(response => {
+              console.log(response.body)
+            // expect(response.body[0]).to.contain.keys("slug", "description");
+          });
+      });
     });
   });
   describe("/Users", () => {
@@ -182,6 +191,14 @@ describe("/api", () => {
             );
           });
       });
+      it("returns an empty array when passed a correct topic with no articles", () => {
+        return request(app)
+          .get("/api/articles?topic=paper")
+          .expect(200)
+          .then(response => {
+            expect(response.body).to.eql([]);
+          });
+      });
     });
   });
 
@@ -330,7 +347,7 @@ describe("/api", () => {
           );
         });
     });
-    
+
     it("GET comments by article_id 400 status when sortBy and invalid column", () => {
       return request(app)
         .get("/api/articles/1/comments?sort_by=invalid")
@@ -350,20 +367,28 @@ describe("/api", () => {
         });
     });
     it("Articles by articles_id with queries status:405", () => {
-        const invalidMethods = ["put", "patch", "post", "delete"];
-        const methodPromises = invalidMethods.map(method => {
-          return request(app)
-            [method]("/api/articles?username=rogersop&topic=mitch")
-            .expect(405)
-            .then(({ body: { msg } }) => {
-              expect(msg).to.equal("method not allowed");
-            });
-        });
-        return Promise.all(methodPromises);
+      const invalidMethods = ["put", "patch", "post", "delete"];
+      const methodPromises = invalidMethods.map(method => {
+        return request(app)
+          [method]("/api/articles?username=rogersop&topic=mitch")
+          .expect(405)
+          .then(({ body: { msg } }) => {
+            expect(msg).to.equal("method not allowed");
+          });
       });
+      return Promise.all(methodPromises);
+    });
     it("GET articles 404 when passing a non valid query", () => {
       return request(app)
         .get("/api/articles?username=rogersop&topic=5555")
+        .expect(404)
+        .then(response => {
+          expect(response.text).to.eql("Request not found");
+        });
+    });
+    it("GET articles 404 when passing a non valid query", () => {
+      return request(app)
+        .get("/api/articles?username=r&topic=5555")
         .expect(404)
         .then(response => {
           expect(response.text).to.eql("Request not found");
@@ -379,18 +404,6 @@ describe("/api", () => {
           expect(response.error.text).to.eql(' column "5555" does not exist');
         });
     });
-    it("Articles by articles_id with queries status:405", () => {
-        const invalidMethods = ["put", "post"];
-        const methodPromises = invalidMethods.map(method => {
-          return request(app)
-            [method]("/api/comments/1")
-            .expect(405)
-            .then(({ body: { msg } }) => {
-              expect(msg).to.equal("method not allowed");
-            });
-        });
-        return Promise.all(methodPromises);
-      });
     it("PATCH comment 400 status when trying to modify an incorrect value", () => {
       return request(app)
         .patch("/api/comments/1")
