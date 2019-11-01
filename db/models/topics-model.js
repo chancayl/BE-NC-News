@@ -7,16 +7,19 @@ exports.fetchTopics = () => {
     .returning("description", "slug");
 };
 
-exports.allTopics = (topicname) => {
+exports.allTopics = topicname => {
   return connection
     .select("*")
     .from("Topics")
     .where("Topics.slug", "=", topicname)
-    .returning("*")
     .then(response => {
       if (response.length >= 1) {
-        console.log(response);
         return response;
+      } else {
+        return Promise.reject({
+          status: 404,
+          msg: `Request not found`
+        });
       }
     });
 };

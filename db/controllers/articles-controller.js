@@ -6,6 +6,9 @@ const {
   arrayofArticles
 } = require("../models/articles-model");
 
+const { allTopics } = require("../models/topics-model");
+const { fetchUsers } = require("../models/users-model");
+
 exports.getArticle = (req, res, next) => {
   const id = req.params;
   fetchArticles(id.article_id)
@@ -45,11 +48,20 @@ exports.getComments = (req, res, next) => {
     .catch(next);
 };
 
+// exports.getArrayofArticles = (req, res, next) => {
+//   const { username, topic, sort_by, sort_order } = req.query;
+//   arrayofArticles(username, topic, sort_by, sort_order)
+//     .then(response => {
+//       res.status(200).send(response);
+//     })
+//     .catch(next);
+// };
+
 exports.getArrayofArticles = (req, res, next) => {
   const { username, topic, sort_by, sort_order } = req.query;
   arrayofArticles(username, topic, sort_by, sort_order)
-    .then(response => {
-      res.status(200).send(response);
+    .then(article => {
+      res.status(200).send(article);
     })
     .catch(next);
 };

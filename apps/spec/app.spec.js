@@ -20,7 +20,7 @@ describe("/api", () => {
     describe("GET", () => {
       it("GET 200 and returns all topics", () => {
         return request(app)
-          .get("/api/Topics")
+          .get("/api/topics")
           .expect(200)
           .then(response => {
             expect(response.body[0]).to.contain.keys("slug", "description");
@@ -28,11 +28,13 @@ describe("/api", () => {
       });
       it("GET 200 and returns the requested slug", () => {
         return request(app)
-          .get("/api/Topics?slug=paper")
+          .get("/api/topics?slug=paper")
           .expect(200)
           .then(response => {
-              console.log(response.body)
-            // expect(response.body[0]).to.contain.keys("slug", "description");
+            expect(response.body[0]).to.eql({
+              slug: "paper",
+              description: "what books are made of"
+            });
           });
       });
     });
@@ -386,11 +388,12 @@ describe("/api", () => {
           expect(response.text).to.eql("Request not found");
         });
     });
-    it("GET articles 404 when passing a non valid query", () => {
+    it("GET articles 404 when passing a non existing topic", () => {
       return request(app)
         .get("/api/articles?username=r&topic=5555")
         .expect(404)
         .then(response => {
+          console.log(response.body);
           expect(response.text).to.eql("Request not found");
         });
     });

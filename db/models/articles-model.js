@@ -1,5 +1,12 @@
 const connection = require("../../connection");
 
+const { allTopics } = require("../models/topics-model");
+const { fetchUsers } = require("../models/users-model");
+
+
+
+
+
 exports.fetchArticles = id => {
   return connection
     .select("Articles.*")
@@ -86,12 +93,18 @@ exports.arrayofArticles = (
     .returning("*")
     .then(article => {
       if (article.length >= 1) {
-        return article;
+        return [article];
       } else {
-        return Promise.reject({
-          status: 404,
-          msg: `Request not found`
-        });
+        if (username && topic) {  
+          return Promise.all([article, fetchUsers(username), allTopics(topic)]);
+        } else if (username) {
+          return Promise.all([article, fetchUsers(username)]);
+        } else {
+          return Promise.all([article, allTopics(topic)]);
+        }
       }
+    })
+    .then(([article]) => {
+      return article;
     });
 };
