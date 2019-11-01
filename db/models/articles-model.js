@@ -23,7 +23,7 @@ exports.fetchArticles = id => {
     });
 };
 
-exports.modifyArticle = (id, newVote) => {
+exports.modifyArticle = (id, newVote = 0) => {
   if (typeof newVote !== "number") {
     return connection
       .select("Articles.*")

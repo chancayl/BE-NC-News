@@ -3,10 +3,10 @@ exports.up = function(knex) {
     articlesTable.increments("article_id").primary();
     articlesTable.string("title").notNullable();
     articlesTable.text("body").notNullable();
-    articlesTable.integer("votes").defaultTo(0);
-    articlesTable.string("topic").references("Topics.slug");
-    articlesTable.string("author").references("Users.username");
-    articlesTable.timestamp("created_at").defaultTo(knex.fn.now());
+    articlesTable.integer("votes").defaultTo(0).notNullable();
+    articlesTable.string("topic").references("Topics.slug").notNullable();
+    articlesTable.string("author").references("Users.username").notNullable();
+    articlesTable.timestamp("created_at").defaultTo(knex.fn.now()).notNullable();
   });
 };
 
