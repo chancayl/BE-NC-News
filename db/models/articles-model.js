@@ -58,21 +58,34 @@ exports.addComment = (id, newComment) => {
   comment.author = newComment.username;
   comment.article_id = id;
   comment.body = newComment.body;
-  return connection("Comments")
-    .insert(comment)
-    .where("Comments.article_id", "=", id)
-    .returning("*")
-    .then(response => {
-      if (response.length >= 1) {
-        return response;
-      } else {
-        return Promise.reject({
-          status: 404,
-          msg: `Request not found`
-        });
-      }
-    });
-  // }
+  if (id) {
+    return connection("Articles")
+      .where("Articles.article_id", "=", id)
+      .returning("*")
+      .then(article => {
+        if (!article.length) {
+          return Promise.reject({
+            status: 404,
+            msg: `Request not found`
+          });
+        } else {
+          return connection("Comments")
+            .insert(comment)
+            .where("Comments.article_id", "=", id)
+            .returning("*")
+            .then(response => {
+              if (response.length >= 1) {
+                return response;
+              } else {
+                return Promise.reject({
+                  status: 404,
+                  msg: `Request not found`
+                });
+              }
+            });
+        }
+      });
+  }
 };
 
 exports.commentsByArticleId = (

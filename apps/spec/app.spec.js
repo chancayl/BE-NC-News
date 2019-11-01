@@ -126,7 +126,7 @@ describe("/api", () => {
       });
     });
     describe("POST", () => {
-      it("POST 201, when adding a new comment and returns the posted comment", () => {
+      it("POST comment by article_id 201, when adding a new comment and returns the posted comment", () => {
         return request(app)
           .post("/api/articles/10/comments")
           .send({
@@ -135,7 +135,7 @@ describe("/api", () => {
           })
           .expect(201)
           .then(({ body }) => {
-            expect(body.comment).to.contain.keys(
+            expect(body.comment[0]).to.contain.keys(
               "comment_id",
               "author",
               "article_id",
@@ -333,7 +333,7 @@ describe("/api", () => {
           );
         });
     });
-    
+
     it("Comments by articles_id status:405", () => {
       const invalidMethods = ["put", "patch", "delete"];
       const methodPromises = invalidMethods.map(method => {
@@ -375,12 +375,9 @@ describe("/api", () => {
           username: "butter_bridge",
           body: "This is a Test, I'm testing my post comment"
         })
-        .expect(400)
+        .expect(404)
         .then(response => {
-          // console.log(response.err)
-          expect(response.error.text).to.equal(
-            ' insert or update on table "Comments" violates foreign key constraint "comments_article_id_foreign"'
-          );
+          expect(response.error.text).to.equal("Request not found");
         });
     });
 
