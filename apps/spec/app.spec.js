@@ -23,7 +23,10 @@ describe("/api", () => {
           .get("/api/topics")
           .expect(200)
           .then(response => {
-            expect(response.body[0]).to.contain.keys("slug", "description");
+            expect(response.body.topics[0]).to.contain.keys(
+              "slug",
+              "description"
+            );
           });
       });
       it("GET 200 and returns the requested slug", () => {
@@ -31,7 +34,7 @@ describe("/api", () => {
           .get("/api/topics?slug=paper")
           .expect(200)
           .then(response => {
-            expect(response.body[0]).to.eql({
+            expect(response.body.topic[0]).to.eql({
               slug: "paper",
               description: "what books are made of"
             });
@@ -46,7 +49,7 @@ describe("/api", () => {
           .get("/api/users/butter_bridge")
           .expect(200)
           .then(response => {
-            expect(response.body).to.contain.keys(
+            expect(response.body.users[0]).to.contain.keys(
               "username",
               "avatar_url",
               "name"
@@ -62,7 +65,7 @@ describe("/api", () => {
           .get("/api/articles/10")
           .expect(200)
           .then(response => {
-            expect(response.body).to.contain.keys(
+            expect(response.body.article[0]).to.contain.keys(
               "author",
               "title",
               "article_id",
@@ -76,13 +79,22 @@ describe("/api", () => {
       });
     });
     describe("PATCH", () => {
-      it("PATCH 200, updates the article_vote and returns the updated article", () => {
+      it("PATCH articles 200 status when trying to modify an incorrect body. it returns the article with no changes", () => {
+        return request(app)
+          .patch("/api/comments/10")
+          .send({ 454: 1 })
+          .expect(200)
+          .then(response => {
+            expect(response.body.comment[0].votes).to.equal(0);
+          });
+      });
+      it("PATCH 200 status when trying to modify an incorrect value. It returns the article with no modifications", () => {
         return request(app)
           .patch("/api/articles/10")
-          .send({ inc_votes: 2 })
+          .send({ inc_votes: true })
           .expect(200)
           .then(({ body }) => {
-            expect(body).to.contain.keys(
+            expect(body.article[0]).to.contain.keys(
               "article_id",
               "title",
               "body",
@@ -91,6 +103,25 @@ describe("/api", () => {
               "author",
               "created_at"
             );
+            expect(body.article[0].votes).to.equal(0);
+          });
+      });
+      it("PATCH 200, updates the article_vote and returns the updated article", () => {
+        return request(app)
+          .patch("/api/articles/10")
+          .send({ inc_votes: 2 })
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.article[0]).to.contain.keys(
+              "article_id",
+              "title",
+              "body",
+              "votes",
+              "topic",
+              "author",
+              "created_at"
+            );
+            expect(body.article[0].votes).to.equal(2);
           });
       });
     });
@@ -121,7 +152,7 @@ describe("/api", () => {
           .get("/api/articles/1/comments")
           .expect(200)
           .then(response => {
-            expect(response.body[0]).to.contain.keys(
+            expect(response.body.comments[0]).to.contain.keys(
               "comment_id",
               "votes",
               "created_at",
@@ -135,7 +166,9 @@ describe("/api", () => {
           .get("/api/articles/1/comments?sort_by=votes")
           .expect(200)
           .then(response => {
-            expect(response.body).to.be.sortedBy("votes", { descending: true });
+            expect(response.body.comments).to.be.sortedBy("votes", {
+              descending: true
+            });
           });
       });
     });
@@ -145,7 +178,7 @@ describe("/api", () => {
           .get("/api/articles?author=butter_bridge&topic=mitch")
           .expect(200)
           .then(response => {
-            expect(response.body[0]).to.contain.keys(
+            expect(response.body.articles[0]).to.contain.keys(
               "author",
               "title",
               "article_id",
@@ -161,7 +194,7 @@ describe("/api", () => {
           .get("/api/articles?author=butter_bridge&topic=mitch")
           .expect(200)
           .then(response => {
-            expect(response.body).to.be.sortedBy("created_at", {
+            expect(response.body.articles).to.be.sortedBy("created_at", {
               descending: true
             });
           });
@@ -173,24 +206,9 @@ describe("/api", () => {
           )
           .expect(200)
           .then(response => {
-            expect(response.body).to.be.sortedBy("votes", { ascending: true });
-          });
-      });
-      it("200 when passing a non valid username but a valid topic, will respond with an array of all articles for the requested topic", () => {
-        return request(app)
-          .get("/api/articles?author=butterbri&topic=mitch")
-          .expect(200)
-          .then(response => {
-            expect(response.body).to.be.an("array");
-            expect(response.body[0]).to.contain.keys(
-              "author",
-              "title",
-              "article_id",
-              "topic",
-              "created_at",
-              "votes",
-              "comment_count"
-            );
+            expect(response.body.articles).to.be.sortedBy("votes", {
+              ascending: true
+            });
           });
       });
       it("returns an empty array when passed a correct topic with no articles", () => {
@@ -198,7 +216,7 @@ describe("/api", () => {
           .get("/api/articles?topic=paper")
           .expect(200)
           .then(response => {
-            expect(response.body).to.eql([]);
+            expect(response.body.articles).to.eql([]);
           });
       });
     });
@@ -212,7 +230,7 @@ describe("/api", () => {
           .send({ inc_votes: 2 })
           .expect(200)
           .then(({ body }) => {
-            expect(body).to.contain.keys(
+            expect(body.comment[0]).to.contain.keys(
               "comment_id",
               "author",
               "article_id",
@@ -220,7 +238,25 @@ describe("/api", () => {
               "created_at",
               "body"
             );
-            expect(body.votes).to.equal(2);
+            expect(body.comment[0].votes).to.equal(2);
+          });
+      });
+      it("PATCH 200 when trying to modify a comment with a wrong value. It returns the comment with no changes", () => {
+        return request(app)
+          .patch("/api/comments/10")
+          .send({ inc_votes: true })
+          .expect(200)
+          .then(response => {
+            expect(response.body.comment[0].votes).to.equal(0);
+          });
+      });
+      it("PATCH 200 when trying to modify a comment with a wrong value. It returns the comment with no changes", () => {
+        return request(app)
+          .patch("/api/comments/10")
+          .send({ inc_votes: true })
+          .expect(200)
+          .then(response => {
+            expect(response.body.comment[0].votes).to.equal(0);
           });
       });
     });
@@ -297,24 +333,7 @@ describe("/api", () => {
           );
         });
     });
-    it("PATCH articles 400 status when trying to modify an incorrect value", () => {
-      return request(app)
-        .patch("/api/articles/10")
-        .send({ inc_votes: true })
-        .expect(400)
-        .then(response => {
-          expect(response.text).to.equal("Incorrect value");
-        });
-    });
-    it("PATCH articles 400 status when trying to modify an incorrect body", () => {
-      return request(app)
-        .patch("/api/comments/1")
-        .send({ 454: 1 })
-        .expect(400)
-        .then(response => {
-          expect(response.text).to.equal("Incorrect value");
-        });
-    });
+    
     it("Comments by articles_id status:405", () => {
       const invalidMethods = ["put", "patch", "delete"];
       const methodPromises = invalidMethods.map(method => {
@@ -349,6 +368,21 @@ describe("/api", () => {
           );
         });
     });
+    it("POST a comment by article_id 404 status when posting comment for an incorrect article_id", () => {
+      return request(app)
+        .post("/api/articles/5454544/comments")
+        .send({
+          username: "butter_bridge",
+          body: "This is a Test, I'm testing my post comment"
+        })
+        .expect(400)
+        .then(response => {
+          // console.log(response.err)
+          expect(response.error.text).to.equal(
+            ' insert or update on table "Comments" violates foreign key constraint "comments_article_id_foreign"'
+          );
+        });
+    });
 
     it("GET comments by article_id 400 status when sortBy and invalid column", () => {
       return request(app)
@@ -358,6 +392,14 @@ describe("/api", () => {
           expect(response.error.text).to.eql(
             ' column "invalid" does not exist'
           );
+        });
+    });
+    it("GET comments by article_id 404 status when and invalid id is passed", () => {
+      return request(app)
+        .get("/api/articles/100000/")
+        .expect(404)
+        .then(response => {
+          expect(response.error.text).to.eql("Request not found");
         });
     });
     it("GET comments by article_id 400 status when sortBy and invalid column", () => {
@@ -372,7 +414,7 @@ describe("/api", () => {
       const invalidMethods = ["put", "patch", "post", "delete"];
       const methodPromises = invalidMethods.map(method => {
         return request(app)
-          [method]("/api/articles?username=rogersop&topic=mitch")
+          [method]("/api/articles?author=rogersop&topic=mitch")
           .expect(405)
           .then(({ body: { msg } }) => {
             expect(msg).to.equal("method not allowed");
@@ -380,9 +422,25 @@ describe("/api", () => {
       });
       return Promise.all(methodPromises);
     });
+    it("Article by author, 404 status when passing a non valid author ", () => {
+      return request(app)
+        .get("/api/articles?author=butterbri")
+        .expect(404)
+        .then(response => {
+          expect(response.text).to.eql("Request not found");
+        });
+    });
+    it("Article by author, 404 status when passing a non valid author but a valid topic", () => {
+      return request(app)
+        .get("/api/articles?author=butterbri&topic=mitch")
+        .expect(404)
+        .then(response => {
+          expect(response.text).to.eql("Request not found");
+        });
+    });
     it("GET articles 404 when passing a non valid query", () => {
       return request(app)
-        .get("/api/articles?username=rogersop&topic=5555")
+        .get("/api/articles?author=rogersop&topic=5555")
         .expect(404)
         .then(response => {
           expect(response.text).to.eql("Request not found");
@@ -390,10 +448,9 @@ describe("/api", () => {
     });
     it("GET articles 404 when passing a non existing topic", () => {
       return request(app)
-        .get("/api/articles?username=r&topic=5555")
+        .get("/api/articles?author=r&topic=5555")
         .expect(404)
         .then(response => {
-          console.log(response.body);
           expect(response.text).to.eql("Request not found");
         });
     });
@@ -407,24 +464,7 @@ describe("/api", () => {
           expect(response.error.text).to.eql(' column "5555" does not exist');
         });
     });
-    it("PATCH comment 400 status when trying to modify an incorrect value", () => {
-      return request(app)
-        .patch("/api/comments/1")
-        .send({ inc_votes: true })
-        .expect(400)
-        .then(response => {
-          expect(response.text).to.equal("Incorrect value");
-        });
-    });
-    it("PATCH comment 400 status when trying to modify an incorrect body", () => {
-      return request(app)
-        .patch("/api/comments/1")
-        .send({ 454: 1 })
-        .expect(400)
-        .then(response => {
-          expect(response.text).to.equal("Incorrect value");
-        });
-    });
+
     it("PATCH comment 404 status when trying to modify a non existing comment", () => {
       return request(app)
         .patch("/api/comments/500000")

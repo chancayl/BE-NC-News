@@ -5,7 +5,7 @@ exports.updateComment = (req, res, next) => {
   const newVote = req.body.inc_votes;
   modifyComment(id, newVote)
     .then(comment => {
-      res.status(200).send(comment[0]);
+      res.status(200).send({comment});
     })
     .catch(next);
 };
@@ -13,7 +13,7 @@ exports.updateComment = (req, res, next) => {
 exports.deleteComment = (req, res, next) => {
   const id = req.params.comment_id;
   removeComment(id)
-    .then(response => {
+    .then(comment => {
       res.sendStatus(204);
     })
     .catch(next);

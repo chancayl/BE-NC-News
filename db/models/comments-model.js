@@ -2,12 +2,15 @@ const connection = require("../../connection");
 
 exports.modifyComment = (id, newVote) => {
   if (typeof newVote !== "number") {
-    return Promise.reject({
-      status: 400,
-      msg: `Incorrect value`
-    });
-  }
-  if (typeof newVote === "number") {
+    return connection
+      .select("Comments.*")
+      .from("Comments")
+      .where("Comments.comment_id", "=", id)
+      .returning("*")
+      .then(response => {
+        return response;
+      });
+  } else {
     return connection
       .select("Comments.*")
       .from("Comments")

@@ -6,14 +6,12 @@ const {
   arrayofArticles
 } = require("../models/articles-model");
 
-const { allTopics } = require("../models/topics-model");
-const { fetchUsers } = require("../models/users-model");
 
 exports.getArticle = (req, res, next) => {
   const id = req.params;
   fetchArticles(id.article_id)
-    .then(response => {
-      res.status(200).send(response[0]);
+    .then(article => {
+      res.status(200).send({article});
     })
     .catch(next);
 };
@@ -23,7 +21,7 @@ exports.updateArticle = (req, res, next) => {
   const { inc_votes } = req.body;
   modifyArticle(id, inc_votes)
     .then(article => {
-      res.status(200).send(article[0]);
+      res.status(200).send({article});
     })
     .catch(next);
 };
@@ -42,26 +40,17 @@ exports.getComments = (req, res, next) => {
   const id = req.params.article_id;
   const { sort_by, sort_order } = req.query;
   commentsByArticleId(id, sort_by, sort_order)
-    .then(response => {
-      res.status(200).send(response);
+    .then(comments => {
+      res.status(200).send({comments});
     })
     .catch(next);
 };
 
-// exports.getArrayofArticles = (req, res, next) => {
-//   const { username, topic, sort_by, sort_order } = req.query;
-//   arrayofArticles(username, topic, sort_by, sort_order)
-//     .then(response => {
-//       res.status(200).send(response);
-//     })
-//     .catch(next);
-// };
-
 exports.getArrayofArticles = (req, res, next) => {
-  const { username, topic, sort_by, sort_order } = req.query;
-  arrayofArticles(username, topic, sort_by, sort_order)
-    .then(article => {
-      res.status(200).send(article);
+  const { author, topic, sort_by, sort_order } = req.query;
+  arrayofArticles(author, topic, sort_by, sort_order)
+    .then(articles => {
+      res.status(200).send({articles});
     })
     .catch(next);
 };

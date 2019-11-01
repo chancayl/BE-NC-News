@@ -3,10 +3,6 @@ const connection = require("../../connection");
 const { allTopics } = require("../models/topics-model");
 const { fetchUsers } = require("../models/users-model");
 
-
-
-
-
 exports.fetchArticles = id => {
   return connection
     .select("Articles.*")
@@ -14,15 +10,29 @@ exports.fetchArticles = id => {
     .where("Articles.article_id", "=", id)
     .leftJoin("Comments", "Articles.article_id", "Comments.article_id")
     .groupBy("Articles.article_id")
-    .count({ comment_count: "Comments.comment_id" });
+    .count({ comment_count: "Comments.comment_id" })
+    .then(response => {
+      if (response.length >= 1) {
+        return response;
+      } else {
+        return Promise.reject({
+          status: 404,
+          msg: `Request not found`
+        });
+      }
+    });
 };
 
 exports.modifyArticle = (id, newVote) => {
   if (typeof newVote !== "number") {
-    return Promise.reject({
-      status: 400,
-      msg: `Incorrect value`
-    });
+    return connection
+      .select("Articles.*")
+      .from("Articles")
+      .where("Articles.article_id", "=", id)
+      .returning("*")
+      .then(response => {
+        return response;
+      });
   } else {
     return connection
       .select("Articles.*")
@@ -50,7 +60,19 @@ exports.addComment = (id, newComment) => {
   comment.body = newComment.body;
   return connection("Comments")
     .insert(comment)
-    .returning("*");
+    .where("Comments.article_id", "=", id)
+    .returning("*")
+    .then(response => {
+      if (response.length >= 1) {
+        return response;
+      } else {
+        return Promise.reject({
+          status: 404,
+          msg: `Request not found`
+        });
+      }
+    });
+  // }
 };
 
 exports.commentsByArticleId = (
@@ -67,7 +89,7 @@ exports.commentsByArticleId = (
 };
 
 exports.arrayofArticles = (
-  username,
+  author,
   topic,
   sort_by = "Articles.created_at",
   sort_order = "desc"
@@ -87,7 +109,7 @@ exports.arrayofArticles = (
     .count({ comment_count: "Comments.comment_id" })
     .orderBy(sort_by, sort_order)
     .modify(query => {
-      if (username) query.where("Articles.author", "=", username);
+      if (author) query.where("Articles.author", "=", author);
       if (topic) query.where("Articles.topic", "=", topic);
     })
     .returning("*")
@@ -95,10 +117,10 @@ exports.arrayofArticles = (
       if (article.length >= 1) {
         return [article];
       } else {
-        if (username && topic) {  
-          return Promise.all([article, fetchUsers(username), allTopics(topic)]);
-        } else if (username) {
-          return Promise.all([article, fetchUsers(username)]);
+        if (author && topic) {
+          return Promise.all([article, fetchUsers(author), allTopics(topic)]);
+        } else if (author) {
+          return Promise.all([article, fetchUsers(author)]);
         } else {
           return Promise.all([article, allTopics(topic)]);
         }

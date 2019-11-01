@@ -8,8 +8,6 @@ exports.handleCustError = (err, req, res, next) => {
   }
   if (err.msg) {
     res.status(404).send(createCustMsgErr());
-  } else if (err.code === "22003") {
-    res.status(404).send(createCustMsgErr());
   } else {
     next(err);
   }
@@ -17,6 +15,8 @@ exports.handleCustError = (err, req, res, next) => {
 
 exports.handle400 = (err, req, res, next) => {
   const psqlRef = {
+    "22003": { status: 404, msg: createCustMsgErr() },
+    // "23503": { status: 404, msg: createCustMsgErr() },
     "42703": {
       status: 400,
       msg: createMessage(err)
