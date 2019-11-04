@@ -7,7 +7,7 @@ exports.fetchTopics = () => {
     .returning("description", "slug");
 };
 
-exports.allTopics = topicname => {
+exports.getTopic = topicname => {
   return connection
     .select("*")
     .from("Topics")

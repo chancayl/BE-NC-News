@@ -7,8 +7,8 @@ const {
 } = require("../models/articles-model");
 
 exports.getArticle = (req, res, next) => {
-  const id = req.params;
-  fetchArticles(id.article_id)
+  const { article_id } = req.params;
+  fetchArticles(article_id)
     .then(([article]) => {
       res.status(200).send({ article });
     })
@@ -16,9 +16,9 @@ exports.getArticle = (req, res, next) => {
 };
 
 exports.updateArticle = (req, res, next) => {
-  const id = req.params.article_id;
+  const { article_id } = req.params;
   const { inc_votes } = req.body;
-  modifyArticle(id, inc_votes)
+  modifyArticle(article_id, inc_votes)
     .then(([article]) => {
       res.status(200).send({ article });
     })
@@ -26,9 +26,9 @@ exports.updateArticle = (req, res, next) => {
 };
 
 exports.postComment = (req, res, next) => {
-  const id = req.params.article_id;
+  const { article_id } = req.params;
   const newComment = req.body;
-  addComment(id, newComment)
+  addComment(article_id, newComment)
     .then(([comment]) => {
       res.status(201).send({ comment });
     })
@@ -36,9 +36,9 @@ exports.postComment = (req, res, next) => {
 };
 
 exports.getComments = (req, res, next) => {
-  const id = req.params.article_id;
+  const { article_id } = req.params;
   const { sort_by, order } = req.query;
-  commentsByArticleId(id, sort_by, order)
+  commentsByArticleId(article_id, sort_by, order)
     .then(comments => {
       res.status(200).send({ comments });
     })
@@ -46,8 +46,8 @@ exports.getComments = (req, res, next) => {
 };
 
 exports.getArrayofArticles = (req, res, next) => {
-  const { author, topic, sort_by, sort_order } = req.query;
-  arrayofArticles(author, topic, sort_by, sort_order)
+  const { author, topic, sort_by, order } = req.query;
+  arrayofArticles(author, topic, sort_by, order)
     .then(articles => {
       res.status(200).send({ articles });
     })

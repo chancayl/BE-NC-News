@@ -1,9 +1,9 @@
 const { modifyComment, removeComment } = require("../models/comments-model");
 
 exports.updateComment = (req, res, next) => {
-  const id = req.params.comment_id;
-  const newVote = req.body.inc_votes;
-  modifyComment(id, newVote)
+  const {comment_id} = req.params;
+  const {inc_votes} = req.body;
+  modifyComment(comment_id, inc_votes)
     .then(([comment]) => {
       res.status(200).send({ comment });
     })
@@ -11,9 +11,9 @@ exports.updateComment = (req, res, next) => {
 };
 
 exports.deleteComment = (req, res, next) => {
-  const id = req.params.comment_id;
-  removeComment(id)
-    .then(comment => {
+  const {comment_id} = req.params;
+  removeComment(comment_id)
+    .then(() => {
       res.sendStatus(204);
     })
     .catch(next);

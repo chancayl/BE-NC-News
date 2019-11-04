@@ -1,17 +1,6 @@
 const connection = require("../../connection");
 
 exports.modifyComment = (id, newVote = 0) => {
-  // console.log(newVote.inc_votes)
-  // if (!newVote.inc_votes) {
-  //   return connection
-  //     .select("Comments.*")
-  //     .from("Comments")
-  //     .where("Comments.comment_id", "=", id)
-  //     .returning("*")
-  //     .then(response => {
-  //       return response;
-  //     });
-  // } else {
   return connection("Comments")
     .where("Comments.comment_id", "=", id)
     .increment("votes", newVote)

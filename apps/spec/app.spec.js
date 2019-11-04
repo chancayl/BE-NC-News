@@ -48,8 +48,8 @@ describe("/api", () => {
         return request(app)
           .get("/api/users/butter_bridge")
           .expect(200)
-          .then(response => {
-            expect(response.body.users).to.contain.keys(
+          .then(({ body }) => {
+            expect(body.user).to.contain.keys(
               "username",
               "avatar_url",
               "name"
@@ -83,7 +83,7 @@ describe("/api", () => {
       it("PATCH 200 status when trying to modify an incorrect value. It returns the article with no modifications", () => {
         return request(app)
           .patch("/api/articles/10")
-          .send({ inc_votes: true })
+          .send({ incvotes: 2 })
           .expect(200)
           .then(({ body }) => {
             expect(body.article).to.contain.keys(
@@ -138,6 +138,7 @@ describe("/api", () => {
           });
       });
     });
+
     describe("GET comments by article_id", () => {
       it("GET 200 and returns an array of comments for the given article_id", () => {
         return request(app)
@@ -157,8 +158,8 @@ describe("/api", () => {
         return request(app)
           .get("/api/articles/1/comments?sort_by=votes&order=asc")
           .expect(200)
-          .then(response => {
-            expect(response.body.comments).to.be.sortedBy("votes", {
+          .then(({ body }) => {
+            expect(body.comments).to.be.sortedBy("votes", {
               asc: true
             });
           });
@@ -169,8 +170,8 @@ describe("/api", () => {
         return request(app)
           .get("/api/articles?author=butter_bridge&topic=mitch")
           .expect(200)
-          .then(response => {
-            expect(response.body.articles[0]).to.contain.keys(
+          .then(({ body }) => {
+            expect(body.articles[0]).to.contain.keys(
               "author",
               "title",
               "article_id",
@@ -183,10 +184,10 @@ describe("/api", () => {
       });
       it("200 status, returns all articles from the author and topic requested with the correct keys", () => {
         return request(app)
-          .get("/api/articles?sort_order=asc")
+          .get("/api/articles?order=asc")
           .expect(200)
-          .then(response => {
-            expect(response.body.articles).to.be.sortedBy("created_at", {
+          .then(({ body }) => {
+            expect(body.articles).to.be.sortedBy("created_at", {
               ascending: true
             });
           });
@@ -195,8 +196,8 @@ describe("/api", () => {
         return request(app)
           .get("/api/articles?author=butter_bridge&topic=mitch")
           .expect(200)
-          .then(response => {
-            expect(response.body.articles).to.be.sortedBy("created_at", {
+          .then(({ body }) => {
+            expect(body.articles).to.be.sortedBy("created_at", {
               descending: true
             });
           });
@@ -204,7 +205,7 @@ describe("/api", () => {
       it("200 status and returns an array of sorted articles as per client request", () => {
         return request(app)
           .get(
-            "/api/articles?author=butter_bridge&topic=mitch&sort_by=votes&sort_order=asc"
+            "/api/articles?author=butter_bridge&topic=mitch&sort_by=votes&order=asc"
           )
           .expect(200)
           .then(response => {
@@ -335,6 +336,16 @@ describe("/api", () => {
           });
       });
 
+      it("PATCH 400 when trying to modify an article with a wrong value. It returns the comment with no changes", () => {
+        return request(app)
+          .patch("/api/articles/10")
+          .send({ inc_votes: true })
+          .expect(400)
+          .then(({ text }) => {
+            expect(text).to.equal("Incorrect value");
+          });
+      });
+
       it("Comments by articles_id status:405", () => {
         const invalidMethods = ["put", "patch", "delete"];
         const methodPromises = invalidMethods.map(method => {
@@ -394,7 +405,7 @@ describe("/api", () => {
       });
       it("GET comments by article_id 404 status when and invalid id is passed", () => {
         return request(app)
-          .get("/api/articles/100000/")
+          .get("/api/articles/100000/comments")
           .expect(404)
           .then(response => {
             expect(response.error.text).to.eql("Request not found");
@@ -412,7 +423,7 @@ describe("/api", () => {
         const invalidMethods = ["put", "patch", "post", "delete"];
         const methodPromises = invalidMethods.map(method => {
           return request(app)
-            [method]("/api/articles?author=rogersop&topic=mitch")
+            [method]("/api/articles?author=rogersop")
             .expect(405)
             .then(({ body: { msg } }) => {
               expect(msg).to.equal("method not allowed");

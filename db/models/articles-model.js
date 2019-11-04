@@ -1,6 +1,6 @@
 const connection = require("../../connection");
 
-const { allTopics } = require("../models/topics-model");
+const { getTopic } = require("../models/topics-model");
 const { fetchUsers } = require("../models/users-model");
 
 exports.fetchArticles = id => {
@@ -23,22 +23,18 @@ exports.fetchArticles = id => {
     });
 };
 
-exports.modifyArticle = (id, newVote = 0) => {
-  if (typeof newVote !== "number") {
-    return connection
-      .select("Articles.*")
-      .from("Articles")
-      .where("Articles.article_id", "=", id)
-      .returning("*")
-      .then(response => {
-        return response;
-      });
+exports.modifyArticle = (id, inc_votes = 0) => {
+  if (typeof inc_votes !== "number") {
+    return Promise.reject({
+      status: 400,
+      msg: `Incorrect value`
+    });
   } else {
     return connection
       .select("Articles.*")
       .from("Articles")
       .where("Articles.article_id", "=", id)
-      .increment("votes", newVote)
+      .increment("votes", inc_votes)
       .returning("*")
       .then(response => {
         if (response.length >= 1) {
@@ -89,23 +85,33 @@ exports.addComment = (id, newComment) => {
 };
 
 exports.commentsByArticleId = (
-  id,
+  article_id,
   sort_by = "created_at",
   sort_order = "desc"
 ) => {
   return connection
     .select("*")
     .from("Comments")
-    .where("Comments.article_id", "=", id)
+    .where("Comments.article_id", "=", article_id)
     .returning("*")
-    .orderBy(sort_by, sort_order);
+    .orderBy(sort_by, sort_order)
+    .then(response => {
+      if (response.length >= 1) {
+        return response;
+      } else {
+        return Promise.reject({
+          status: 404,
+          msg: `Request not found`
+        });
+      }
+    });
 };
 
 exports.arrayofArticles = (
   author,
   topic,
   sort_by = "Articles.created_at",
-  sort_order = "desc"
+  order = "desc"
 ) => {
   return connection
     .select(
@@ -120,7 +126,7 @@ exports.arrayofArticles = (
     .leftJoin("Comments", "Articles.article_id", "Comments.article_id")
     .groupBy("Articles.article_id")
     .count({ comment_count: "Comments.comment_id" })
-    .orderBy(sort_by, sort_order)
+    .orderBy(sort_by, order)
     .modify(query => {
       if (author) query.where("Articles.author", "=", author);
       if (topic) query.where("Articles.topic", "=", topic);
@@ -131,11 +137,11 @@ exports.arrayofArticles = (
         return [article];
       } else {
         if (author && topic) {
-          return Promise.all([article, fetchUsers(author), allTopics(topic)]);
+          return Promise.all([article, fetchUsers(author), getTopic(topic)]);
         } else if (author) {
           return Promise.all([article, fetchUsers(author)]);
         } else {
-          return Promise.all([article, allTopics(topic)]);
+          return Promise.all([article, getTopic(topic)]);
         }
       }
     })

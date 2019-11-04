@@ -1,16 +1,16 @@
-const { fetchTopics, allTopics } = require("../models/topics-model");
+const { fetchTopics, getTopic } = require("../models/topics-model");
 
 exports.getTopics = (req, res, next) => {
-  const query = req.query.slug;
-  if (query) {
-    allTopics(query)
+  const { slug } = req.query;
+  if (slug) {
+    getTopic(slug)
       .then(topic => {
-        res.status(200).send({topic});
+        res.status(200).send({ topic });
       })
       .catch(next);
   } else {
     fetchTopics().then(topics => {
-      res.status(200).send({topics});
+      res.status(200).send({ topics });
     });
   }
 };
