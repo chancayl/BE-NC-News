@@ -6,7 +6,6 @@ exports.fetchUsers = username => {
     .from("Users")
     .where("username", "=", username)
     .then(response => {
-      // console.log(response.length)
       if (response.length === 0) {
         return Promise.reject({
           status: 404,

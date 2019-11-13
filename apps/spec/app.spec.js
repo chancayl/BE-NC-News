@@ -16,6 +16,7 @@ describe("/api", () => {
   beforeEach(() => {
     return connection.seed.run();
   });
+
   describe("/Topics", () => {
     describe("GET", () => {
       it("GET 200 and returns all topics", () => {
@@ -42,6 +43,7 @@ describe("/api", () => {
       });
     });
   });
+
   describe("/Users", () => {
     describe("GET", () => {
       it("GET 200, return the requested user with the key username, avatar_url and name", () => {
@@ -49,15 +51,12 @@ describe("/api", () => {
           .get("/api/users/butter_bridge")
           .expect(200)
           .then(({ body }) => {
-            expect(body.user).to.contain.keys(
-              "username",
-              "avatar_url",
-              "name"
-            );
+            expect(body.user).to.contain.keys("username", "avatar_url", "name");
           });
       });
     });
   });
+
   describe("/Articles", () => {
     describe("GET Articles", () => {
       it("GET 200, returns an article with author, title, article_id, body, topic, created_at, votes and comment_count", () => {
@@ -272,6 +271,18 @@ describe("/api", () => {
     });
 
     describe("ERROR", () => {
+      it("Api status:405", () => {
+        const invalidMethods = ["patch", "post", "put", "delete"];
+        const methodPromises = invalidMethods.map(method => {
+          return request(app)
+            [method]("/api/")
+            .expect(405)
+            .then(({ body: { msg } }) => {
+              expect(msg).to.equal("method not allowed");
+            });
+        });
+        return Promise.all(methodPromises);
+      });
       it("Topics status:405", () => {
         const invalidMethods = ["patch", "post", "put", "delete"];
         const methodPromises = invalidMethods.map(method => {
@@ -505,3 +516,5 @@ describe("/api", () => {
     });
   });
 });
+
+//comments by article_id 404

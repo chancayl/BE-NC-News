@@ -89,20 +89,25 @@ exports.commentsByArticleId = (
   sort_by = "created_at",
   sort_order = "desc"
 ) => {
-  return connection
-    .select("*")
-    .from("Comments")
-    .where("Comments.article_id", "=", article_id)
+  return connection("Articles")
+    .where("Articles.article_id", "=", article_id)
     .returning("*")
-    .orderBy(sort_by, sort_order)
-    .then(response => {
-      if (response.length >= 1) {
-        return response;
-      } else {
+    .then(article => {
+      if (!article.length) {
         return Promise.reject({
           status: 404,
           msg: `Request not found`
         });
+      } else {
+        const id = article[0].article_id;
+        return connection("Comments")
+          .select("*")
+          .where("Comments.article_id", "=", id)
+          .returning("*")
+          .orderBy(sort_by, sort_order)
+          .then(response => {
+            return response;
+          });
       }
     });
 };
