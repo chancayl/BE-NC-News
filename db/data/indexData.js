@@ -7,4 +7,5 @@ const data = {
   test: testData,
   production: devData
 };
+
 module.exports = data[ENV];

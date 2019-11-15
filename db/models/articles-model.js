@@ -79,6 +79,7 @@ exports.addComment = (id, newComment) => {
                 });
               }
             });
+
         }
       });
   }
