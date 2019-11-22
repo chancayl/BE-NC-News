@@ -35,6 +35,9 @@ exports.modifyArticle = (id, inc_votes = 0) => {
       .from("Articles")
       .where("Articles.article_id", "=", id)
       .increment("votes", inc_votes)
+      .leftJoin("Comments", "Articles.article_id", "Comments.article_id")
+      .groupBy("Articles.article_id")
+      .count({ comment_count: "Comments.comment_id" })
       .returning("*")
       .then(response => {
         if (response.length >= 1) {
@@ -79,7 +82,6 @@ exports.addComment = (id, newComment) => {
                 });
               }
             });
-
         }
       });
   }
